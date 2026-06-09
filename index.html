@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BD Study — Avaliação Final</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #16161f;
+    --border: #2a2a3a;
+    --accent: #00e5a0;
+    --accent2: #7c6aff;
+    --accent3: #ff6a3d;
+    --accent4: #ffd93d;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --correct: #00e5a0;
+    --wrong: #ff4f4f;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.3;
+  }
+
+  /* ─── LAYOUT ─── */
+  .shell {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    width: 260px;
+    min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .logo {
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo .badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    background: rgba(0,229,160,0.1);
+    padding: 3px 8px;
+    border-radius: 2px;
+    display: inline-block;
+    margin-bottom: 8px;
+    border: 1px solid rgba(0,229,160,0.2);
+  }
+  .logo h1 { font-size: 18px; font-weight: 800; line-height: 1.2; }
+  .logo h1 span { color: var(--accent); }
+
+  .progress-bar-wrap {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .progress-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .progress-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  nav { padding: 12px 0; flex: 1; }
+  .nav-section { padding: 6px 20px 4px; }
+  .nav-section-label {
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-left: 2px solid transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    position: relative;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .nav-item.active {
+    color: var(--text);
+    border-left-color: var(--accent);
+    background: rgba(0,229,160,0.06);
+  }
+  .nav-item .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--border);
+  }
+  .nav-item.active .dot { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .nav-item .check {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--accent);
+    display: none;
+  }
+  .nav-item.done .check { display: block; }
+  .nav-item.done .dot { background: var(--accent); }
+
+  /* ─── MAIN ─── */
+  .main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+  }
+
+  /* ─── PAGE ─── */
+  .page { display: none; animation: fadeIn 0.3s ease; }
+  .page.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    padding: 60px 48px 40px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 320px; height: 320px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(124,106,255,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent2);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hero-tag::before {
+    content: '';
+    width: 20px; height: 1px;
+    background: var(--accent2);
+  }
+  .hero h2 { font-size: 36px; font-weight: 800; line-height: 1.15; margin-bottom: 12px; }
+  .hero h2 em { font-style: normal; color: var(--accent); }
+  .hero p { color: var(--muted); font-size: 14px; max-width: 560px; line-height: 1.7; }
+
+  /* ─── SECTION CONTENT ─── */
+  .content-area { padding: 32px 48px 64px; }
+
+  .topic-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .topic-card:hover { border-color: rgba(124,106,255,0.3); }
+
+  .topic-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 22px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .topic-icon {
+    width: 36px; height: 36px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .topic-title { font-size: 14px; font-weight: 700; }
+  .topic-sub { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .topic-arrow {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 12px;
+    transition: transform 0.2s;
+  }
+  .topic-card.open .topic-arrow { transform: rotate(180deg); }
+
+  .topic-body {
+    display: none;
+    padding: 0 22px 22px;
+    border-top: 1px solid var(--border);
+  }
+  .topic-card.open .topic-body { display: block; }
+
+  /* ─── THEORY BLOCKS ─── */
+  .theory-block {
+    margin-top: 18px;
+  }
+  .theory-block h4 {
+    font-size: 12px;
+    font-family: 'Space Mono', monospace;
+    color: var(--accent);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(0,229,160,0.15);
+  }
+  .theory-block p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.75;
+    margin-bottom: 10px;
+  }
+  .theory-block p strong { color: var(--text); }
+
+  .pill-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .pill {
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    padding: 4px 10px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .pill.accent { border-color: rgba(0,229,160,0.3); color: var(--accent); background: rgba(0,229,160,0.06); }
+  .pill.purple { border-color: rgba(124,106,255,0.3); color: var(--accent2); background: rgba(124,106,255,0.06); }
+  .pill.orange { border-color: rgba(255,106,61,0.3); color: var(--accent3); background: rgba(255,106,61,0.06); }
+  .pill.yellow { border-color: rgba(255,217,61,0.3); color: var(--accent4); background: rgba(255,217,61,0.06); }
+
+  /* ─── CODE BLOCKS ─── */
+  .code-wrap {
+    background: #0d0d14;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin: 14px 0;
+    overflow: hidden;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+  }
+  .code-label {
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+  .copy-btn {
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+  pre {
+    padding: 16px 14px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-x: auto;
+    color: #b8b8d0;
+  }
+  .kw { color: #7c6aff; }
+  .fn { color: #00e5a0; }
+  .str { color: #ffd93d; }
+  .cm { color: #4a4a60; font-style: italic; }
+  .tp { color: #ff6a3d; }
+  .nm { color: #b8b8d0; }
+
+  /* ─── CARDS GRID ─── */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 14px 0;
+  }
+  .info-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+  }
+  .info-card .ic-title {
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .info-card .ic-body {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .info-card .ic-body strong { color: var(--text); }
+
+  /* ─── DER DIAGRAM ─── */
+  .der-diagram {
+    background: #0d0d14;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 24px;
+    margin: 14px 0;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    overflow-x: auto;
+  }
+  .er-entity {
+    display: inline-block;
+    background: rgba(124,106,255,0.15);
+    border: 1px solid rgba(124,106,255,0.4);
+    border-radius: 4px;
+    padding: 6px 12px;
+    color: var(--accent2);
+    font-weight: 700;
+    margin: 0 4px;
+  }
+  .er-rel {
+    display: inline-block;
+    background: rgba(0,229,160,0.1);
+    border: 1px solid rgba(0,229,160,0.3);
+    border-radius: 20px;
+    padding: 4px 10px;
+    color: var(--accent);
+    margin: 0 4px;
+  }
+  .er-attr {
+    display: inline-block;
+    background: rgba(255,106,61,0.1);
+    border: 1px solid rgba(255,106,61,0.3);
+    border-radius: 20px;
+    padding: 3px 8px;
+    color: var(--accent3);
+    font-size: 10px;
+    margin: 2px;
+  }
+  .er-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .er-line { color: var(--muted); margin: 0 4px; }
+
+  /* ─── TABLE ─── */
+  .db-table {
+    background: #0d0d14;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin: 14px 0;
+    overflow: hidden;
+  }
+  .db-table-header {
+    background: rgba(124,106,255,0.12);
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent2);
+    font-family: 'Space Mono', monospace;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .db-table-header::before {
+    content: '⬛';
+    font-size: 8px;
+    color: var(--accent2);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th {
+    background: rgba(255,255,255,0.03);
+    text-align: left;
+    padding: 8px 14px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+  }
+  td { padding: 8px 14px; border-bottom: 1px solid rgba(255,255,255,0.03); color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  .pk { color: var(--accent4); font-family: 'Space Mono', monospace; }
+  .fk { color: var(--accent3); font-family: 'Space Mono', monospace; }
+  .dt { color: var(--accent2); font-family: 'Space Mono', monospace; font-size: 11px; }
+
+  /* ─── QUIZ ─── */
+  .quiz-section { margin-top: 24px; }
+  .quiz-title {
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    color: var(--accent4);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255,217,61,0.15);
+  }
+  .quiz-q {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 14px;
+    transition: border-color 0.2s;
+  }
+  .quiz-q.answered-correct { border-color: var(--correct); background: rgba(0,229,160,0.05); }
+  .quiz-q.answered-wrong { border-color: var(--wrong); background: rgba(255,79,79,0.05); }
+
+  .q-text {
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  .q-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .options { display: flex; flex-direction: column; gap: 6px; }
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--muted);
+    background: var(--bg);
+  }
+  .option:hover:not(.locked) { border-color: var(--accent2); color: var(--text); }
+  .option.selected { border-color: var(--accent2); color: var(--text); background: rgba(124,106,255,0.08); }
+  .option.correct { border-color: var(--correct); color: var(--correct); background: rgba(0,229,160,0.08); }
+  .option.incorrect { border-color: var(--wrong); color: var(--wrong); background: rgba(255,79,79,0.08); }
+  .option.reveal-correct { border-color: var(--correct); color: var(--correct); background: rgba(0,229,160,0.08); }
+  .option .letter {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .q-feedback {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.5;
+    display: none;
+  }
+  .q-feedback.show { display: block; }
+  .q-feedback.ok { background: rgba(0,229,160,0.08); color: var(--accent); border: 1px solid rgba(0,229,160,0.2); }
+  .q-feedback.err { background: rgba(255,79,79,0.08); color: #ff7f7f; border: 1px solid rgba(255,79,79,0.2); }
+
+  /* ─── SCORE BADGE ─── */
+  .score-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-top: 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .score-num { font-size: 20px; font-weight: 700; color: var(--accent); }
+
+  /* ─── HOME ─── */
+  .home-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+    margin-top: 28px;
+  }
+  .home-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 22px;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .home-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--c1), var(--c2));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .home-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.15); }
+  .home-card:hover::before { opacity: 1; }
+  .home-card .hc-icon { font-size: 28px; margin-bottom: 14px; }
+  .home-card .hc-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+  .home-card .hc-title { font-size: 15px; font-weight: 800; margin-bottom: 6px; }
+  .home-card .hc-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .home-card .hc-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 12px;
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    background: var(--border);
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+
+  .alert-box {
+    background: rgba(255,217,61,0.07);
+    border: 1px solid rgba(255,217,61,0.25);
+    border-radius: 6px;
+    padding: 14px 18px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--accent4);
+    margin-bottom: 24px;
+  }
+  .alert-box strong { font-weight: 700; }
+
+  /* ─── CHEATSHEET ─── */
+  .cheat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .cheat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .cheat-card-header {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cheat-card pre {
+    padding: 12px 16px;
+    font-size: 11px;
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 768px) {
+    .sidebar { width: 220px; }
+    .hero { padding: 32px 24px 24px; }
+    .content-area { padding: 24px 24px 48px; }
+    .hero h2 { font-size: 26px; }
+  }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ─── DIVIDER ─── */
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  .tip {
+    display: flex;
+    gap: 10px;
+    background: rgba(124,106,255,0.07);
+    border: 1px solid rgba(124,106,255,0.2);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin: 12px 0;
+  }
+  .tip::before { content: '💡'; flex-shrink: 0; }
+  .tip strong { color: var(--accent2); }
+
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+<!-- ─── SIDEBAR ─── -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="badge">AF · 09/06</div>
+    <h1>Banco de<br><span>Dados</span></h1>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-label"><span>PROGRESSO</span><span id="progress-pct">0%</span></div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+  </div>
+  <nav>
+    <div class="nav-section"><span class="nav-section-label">Início</span></div>
+    <div class="nav-item active" onclick="showPage('home')" id="nav-home">
+      <span class="dot"></span> Visão Geral <span class="check">✓</span>
+    </div>
+    <div class="nav-section" style="margin-top:8px"><span class="nav-section-label">Conteúdo</span></div>
+    <div class="nav-item" onclick="showPage('der')" id="nav-der">
+      <span class="dot"></span> 01 · Modelo Conceitual <span class="check">✓</span>
+    </div>
+    <div class="nav-item" onclick="showPage('logico')" id="nav-logico">
+      <span class="dot"></span> 02 · Modelo Lógico <span class="check">✓</span>
+    </div>
+    <div class="nav-item" onclick="showPage('fisico')" id="nav-fisico">
+      <span class="dot"></span> 03 · Modelo Físico <span class="check">✓</span>
+    </div>
+    <div class="nav-item" onclick="showPage('sql')" id="nav-sql">
+      <span class="dot"></span> 04 · Consultas SQL <span class="check">✓</span>
+    </div>
+    <div class="nav-section" style="margin-top:8px"><span class="nav-section-label">Revisão</span></div>
+    <div class="nav-item" onclick="showPage('cheat')" id="nav-cheat">
+      <span class="dot"></span> Cheat Sheet <span class="check">✓</span>
+    </div>
+    <div class="nav-item" onclick="showPage('quiz')" id="nav-quiz">
+      <span class="dot"></span> Simulado Geral <span class="check">✓</span>
+    </div>
+  </nav>
+</aside>
+
+<!-- ─── MAIN ─── -->
+<main class="main">
+
+<!-- ══════════════ HOME ══════════════ -->
+<section class="page active" id="page-home">
+  <div class="hero">
+    <div class="hero-tag">Avaliação Final · Banco de Dados</div>
+    <h2>Pronto para a <em>AF</em> amanhã?</h2>
+    <p>Guia de estudo completo com teoria, exemplos práticos e simulados para os 4 critérios de avaliação. Estude cada módulo e teste seu conhecimento.</p>
+  </div>
+  <div class="content-area">
+    <div class="alert-box">
+      <strong>📅 Avaliação Final: 09/06</strong> — A AF vai de 0 a 5 pontos e substitui automaticamente a sua menor nota (A1 ou A2). Conteúdo baseado nas atividades práticas e projeto do semestre.
+    </div>
+    <div class="home-grid">
+      <div class="home-card" style="--c1:#7c6aff;--c2:#00e5a0" onclick="showPage('der')">
+        <div class="hc-icon">🗂️</div>
+        <div class="hc-num">01 · DER</div>
+        <div class="hc-title">Modelo Conceitual</div>
+        <div class="hc-desc">Entidades, relacionamentos, cardinalidades e alinhamento ao domínio de negócio.</div>
+        <div class="hc-tag">⬡ DER / ER</div>
+      </div>
+      <div class="home-card" style="--c1:#00e5a0;--c2:#ffd93d" onclick="showPage('logico')">
+        <div class="hc-icon">🔗</div>
+        <div class="hc-num">02 · LÓGICO</div>
+        <div class="hc-title">Modelo Lógico</div>
+        <div class="hc-desc">Transformar DER em tabelas, chaves primárias e estrangeiras, normalização.</div>
+        <div class="hc-tag">⬡ PK / FK / Tabelas</div>
+      </div>
+      <div class="home-card" style="--c1:#ff6a3d;--c2:#ffd93d" onclick="showPage('fisico')">
+        <div class="hc-icon">🏗️</div>
+        <div class="hc-num">03 · FÍSICO</div>
+        <div class="hc-title">Modelo Físico</div>
+        <div class="hc-desc">Scripts SQL, dicionário de dados, tipos de dados e consistência geral.</div>
+        <div class="hc-tag">⬡ DDL / Scripts</div>
+      </div>
+      <div class="home-card" style="--c1:#ffd93d;--c2:#ff6a3d" onclick="showPage('sql')">
+        <div class="hc-icon">⚡</div>
+        <div class="hc-num">04 · SQL</div>
+        <div class="hc-title">Consultas SQL</div>
+        <div class="hc-desc">SELECT, WHERE, JOIN, GROUP BY, HAVING, subqueries e condições de busca.</div>
+        <div class="hc-tag">⬡ DML / SELECT</div>
+      </div>
+      <div class="home-card" style="--c1:#00e5a0;--c2:#7c6aff" onclick="showPage('cheat')">
+        <div class="hc-icon">📋</div>
+        <div class="hc-num">EXTRA</div>
+        <div class="hc-title">Cheat Sheet</div>
+        <div class="hc-desc">Referência rápida com tudo que você precisa saber de uma vez só.</div>
+        <div class="hc-tag">⬡ Revisão Rápida</div>
+      </div>
+      <div class="home-card" style="--c1:#ff6a3d;--c2:#7c6aff" onclick="showPage('quiz')">
+        <div class="hc-icon">🎯</div>
+        <div class="hc-num">SIMULADO</div>
+        <div class="hc-title">Simulado Geral</div>
+        <div class="hc-desc">16 questões cobrindo todos os tópicos da AF com feedback imediato.</div>
+        <div class="hc-tag">⬡ 16 questões</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ DER ══════════════ -->
+<section class="page" id="page-der">
+  <div class="hero">
+    <div class="hero-tag">01 · Modelo Conceitual</div>
+    <h2>Diagrama <em>Entidade-Relacionamento</em></h2>
+    <p>O modelo conceitual representa o domínio de negócio de forma abstrata, identificando entidades, seus atributos e os relacionamentos entre elas.</p>
+  </div>
+  <div class="content-area">
+
+    <!-- Entidades -->
+    <div class="topic-card open">
+      <div class="topic-header" onclick="toggleCard(this)">
+        <div class="topic-icon" style="background:rgba(124,106,255,0.15)">🗃️</div>
+        <div><div class="topic-title">Entidades e Atributos</div><div class="topic-sub">O que representar no DER</div></div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-body">
+        <div class="theory-block">
+          <h4>O que é uma Entidade?</h4>
+          <p>Uma <strong>entidade</strong> representa um objeto do mundo real sobre o qual você deseja guardar informações. No DER, é representada por um <strong>retângulo</strong>.</p>
+          <p>Exemplos: <strong>Cliente</strong>, <strong>Produto</strong>, <strong>Pedido</strong>, <strong>Funcionário</strong>, <strong>Curso</strong>.</p>
+          <div class="pill-list">
+            <span class="pill purple">Entidade Forte</span>
+            <span class="pill orange">Entidade Fraca</span>
+            <span class="pill">Entidade Associativa</span>
+          </div>
+        </div>
+        <div class="theory-block">
+          <h4>Tipos de Atributos</h4>
+          <div class="cards-grid">
+            <div class="info-card"><div class="ic-title">🔑 Chave (PK)</div><div class="ic-body"><strong>Identifica unicamente</strong> cada ocorrência. Ex: CPF, ID. Representado com sublinhado no DER.</div></div>
+            <div class="info-card"><div class="ic-title">📦 Simples</div><div class="ic-body">Valor único e indivisível. Ex: Nome, Preço, Data.</div></div>
+            <div class="info-card"><div class="ic-title">📋 Composto</div><div class="ic-body">Pode ser dividido. Ex: Endereço (Rua + Número + CEP).</div></div>
+            <div class="info-card"><div class="ic-title">🔄 Multivalorado</div><div class="ic-body">Pode ter múltiplos valores. Ex: Telefone(s) de um cliente.</div></div>
+            <div class="info-card"><div class="ic-title">⚙️ Derivado</div><div class="ic-body">Calculado a partir de outros. Ex: Idade (derivada de DataNasc).</div></div>
+          </div>
+        </div>
+        <div class="theory-block">
+          <h4>Exemplo — Entidade CLIENTE</h4>
+          <div class="der-diagram">
+            <div style="color:var(--muted); font-size:10px; margin-bottom:12px">Notação simplificada do DER</div>
+            <div style="text-align:center">
+              <div style="display:inline-block; background:rgba(124,106,255,0.15); border:2px solid rgba(124,106,255,0.5); border-radius:4px; padding:10px 20px; color:var(--accent2); font-weight:700; font-size:13px">CLIENTE</div>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:12px">
+              <span class="er-attr" style="text-decoration:underline">id_cliente (PK)</span>
+              <span class="er-attr">nome</span>
+              <span class="er-attr">email</span>
+              <span class="er-attr">cpf</span>
+              <span class="er-attr">data_cadastro</span>
+            </div>
+          </div>
+        </div>
+        <div class="quiz-section">
+          <div class="quiz-title">⚡ Questão Rápida</div>
+          <div class="quiz-q" id="q-der1" data-answer="B">
+            <span class="q-num">QUESTÃO 01</span>
+            <div class="q-text">No DER, um atributo que pode ter <strong>mais de um valor</strong> para a mesma entidade é chamado de:</div>
+            <div class="options">
+              <div class="option" onclick="answerQ('q-der1','A',this)"><span class="letter">A</span>Atributo derivado</div>
+              <div class="option" onclick="answerQ('q-der1','B',this)"><span class="letter">B</span>Atributo multivalorado</div>
+              <div class="option" onclick="answerQ('q-der1','C',this)"><span class="letter">C</span>Atributo composto</div>
+              <div class="option" onclick="answerQ('q-der1','D',this)"><span class="letter">D</span>Atributo chave</div>
+            </div>
+            <div class="q-feedback" id="q-der1-fb"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Relacionamentos e Cardinalidade -->
+    <div class="topic-card">
+      <div class="topic-header" onclick="toggleCard(this)">
+        <div class="topic-icon" style="background:rgba(0,229,160,0.1)">🔗</div>
+        <div><div class="topic-title">Relacionamentos e Cardinalidades</div><div class="topic-sub">Como conectar entidades corretamente</div></div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-body">
+        <div class="theory-block">
+          <h4>Cardinalidades</h4>
+          <div class="cards-grid">
+            <div class="info-card"><div class="ic-title">1 : 1</div><div class="ic-body">Um para Um. Ex: <strong>Pessoa → Passaporte</strong>. Cada pessoa tem um passaporte.</div></div>
+            <div class="info-card"><div class="ic-title">1 : N</div><div class="ic-body">Um para Muitos. Ex: <strong>Cliente → Pedidos</strong>. Um cliente faz vários pedidos.</div></div>
+            <div class="info-card"><div class="ic-title">N : N</div><div class="ic-body">Muitos para Muitos. Ex: <strong>Aluno ↔ Disciplina</strong>. Gera uma tabela intermediária.</div></div>
+          </div>
+        </div>
+        <div class="theory-block">
+          <h4>Exemplo de DER — E-commerce</h4>
+          <div class="der-diagram">
+            <div class="er-row">
+              <span class="er-entity">CLIENTE</span>
+              <span class="er-line">——— (1,N) ———</span>
+              <span class="er-rel">REALIZA</span>
+              <span class="er-line">——— (1,1) ———</span>
+              <span class="er-entity">PEDIDO</span>
+            </div>
+            <div class="er-row" style="margin-top:12px">
+              <span class="er-entity">PEDIDO</span>
+              <span class="er-line">——— (1,N) ———</span>
+              <span class="er-rel">CONTÉM</span>
+              <span class="er-line">——— (N,M) ———</span>
+              <span class="er-entity">PRODUTO</span>
+            </div>
+            <div class="er-row" style="margin-top:12px">
+              <span class="er-entity">PRODUTO</span>
+              <span class="er-line">——— (N,1) ———</span>
+              <span class="er-rel">PERTENCE</span>
+              <span class="er-line">——— (1,N) ———</span>
+              <span class="er-entity">CATEGORIA</span>
+            </div>
+          </div>
+        </div>
+        <div class="tip"><strong>Dica para a prova:</strong> Cardinalidade N:N sempre exige uma tabela intermediária (associativa) no modelo lógico! Ex: PEDIDO_PRODUTO com quantidades e preço unitário.</div>
+        <div class="quiz-section">
+          <div class="quiz-title">⚡ Questão Rápida</div>
+          <div class="quiz-q" id="q-der2" data-answer="C">
+            <span class="q-num">QUESTÃO 02</span>
+            <div class="q-text">Em um sistema universitário, um <strong>aluno</strong> pode se matricular em várias <strong>disciplinas</strong>, e cada disciplina pode ter vários alunos. Qual é a cardinalidade desse relacionamento?</div>
+            <div class="options">
+              <div class="option" onclick="answerQ('q-der2','A',this)"><span class="letter">A</span>1 : 1</div>
+              <div class="option" onclick="answerQ('q-der2','B',this)"><span class="letter">B</span>1 : N</div>
+              <div class="option" onclick="answerQ('q-der2','C',this)"><span class="letter">C</span>N : N</div>
+              <div class="option" onclick="answerQ('q-der2','D',this)"><span class="letter">D</span>N : 1</div>
+            </div>
+            <div class="q-feedback" id="q-der2-fb"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════ LÓGICO ══════════════ -->
+<section class="page" id="page-logico">
+  <div class="hero">
+    <div class="hero-tag">02 · Modelo Lógico</div>
+    <h2>Transformando DER em <em>Tabelas</em></h2>
+    <p>O modelo lógico traduz o modelo conceitual para estruturas de tabelas, definindo chaves primárias, chaves estrangeiras e os relacionamentos entre elas.</p>
+  </div>
+  <div class="content-area">
+
+    <div class="topic-card open">
+      <div class="topic-header" onclick="toggleCard(this)">
+        <div class="topic-icon" style="background:rgba(0,229,160,0.1)">📐</div>
+        <div><div class="topic-title">Regras de Mapeamento</div><div class="topic-sub">DER → Tabelas Relacionais</div></div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-body">
+        <div class="theory-block">
+          <h4>Regras de Conversão</h4>
+          <div class="cards-grid">
+            <div class="info-card"><div class="ic-title">📦 Entidade → Tabela</div><div class="ic-body">Cada entidade vira uma tabela. Atributos viram colunas. Chave → PRIMARY KEY.</div></div>
+            <div class="info-card"><div class="ic-title">🔗 Rel. 1:N</div><div class="ic-body">A FK fica no lado N. Ex: Pedido tem <strong>id_cliente (FK)</strong>.</div></div>
+            <div class="info-card"><div class="ic-title">🔁 Rel. N:N</div><div class="ic-body">Cria uma <strong>tabela intermediária</strong> com as FKs das duas entidades e atributos do relacionamento.</div></div>
+            <div class="info-card"><div class="ic-title">🔑 Rel. 1:1</div><div class="ic-body">FK fica em qualquer lado (geralmente no lado obrigatório). Pode ser UNIQUE.</div></div>
+          </div>
+        </div>
+        <div class="theory-block">
+          <h4>Representação Textual — Modelo Lógico</h4>
+          <div class="code-wrap">
+            <div class="code-header"><span class="code-label">NOTAÇÃO LÓGICA</span></div>
+            <pre>CLIENTE (<u>id_cliente</u>, nome, email, cpf, data_cadastro)
+
+PEDIDO (<u>id_pedido</u>, data_pedido, status, valor_total,
+        <span style="color:var(--accent3)">id_cliente (FK → CLIENTE)</span>)
+
+PRODUTO (<u>id_produto</u>, nome, descricao, preco, estoque,
+         <span style="color:var(--accent3)">id_categoria (FK → CATEGORIA)</span>)
+
+CATEGORIA (<u>id_categoria</u>, nome, descricao)
+
+ITEM_PEDIDO (<u>id_pedido (FK → PEDIDO)</u>, <u>id_produto (FK → PRODUTO)</u>,
+             quantidade, preco_unitario)</pre>
+          </div>
+          <div class="tip"><strong>Atenção:</strong> ITEM_PEDIDO é a tabela associativa de PEDIDO × PRODUTO (N:N). A PK é composta pelas duas FKs!</div>
+        </div>
+
+        <div class="theory-block">
+          <h4>Visualização — Tabelas e Relacionamentos</h4>
+          <div class="db-table">
+            <div class="db-table-header">CLIENTE</div>
+            <table>
+              <tr><th>COLUNA</th><th>TIPO</th><th>RESTRIÇÃO</th></tr>
+              <tr><td class="pk">id_cliente</td><td class="dt">INT</td><td><span class="pill accent" style="font-size:10px">PK</span></td></tr>
+              <tr><td>nome</td><td class="dt">VARCHAR(100)</td><td><span class="pill" style="font-size:10px">NOT NULL</span></td></tr>
+              <tr><td>email</td><td class="dt">VARCHAR(150)</td><td><span class="pill" style="font-size:10px">UNIQUE</span></td></tr>
+              <tr><td>cpf</td><td class="dt">CHAR(11)</td><td><span class="pill" style="font-size:10px">UNIQUE</span></td></tr>
+            </table>
+          </div>
+          <div class="db-table" style="margin-top:10px">
+            <div class="db-table-header">PEDIDO</div>
+            <table>
+              <tr><th>COLUNA</th><th>TIPO</th><th>RESTRIÇÃO</th></tr>
+              <tr><td class="pk">id_pedido</td><td class="dt">INT</td><td><span class="pill accent" style="font-size:10px">PK</span></td></tr>
+              <tr><td>data_pedido</td><td class="dt">DATE</td><td><span class="pill" style="font-size:10px">NOT NULL</span></td></tr>
+              <tr><td>status</td><td class="dt">VARCHAR(20)</td><td></td></tr>
+              <tr><td class="fk">id_cliente</td><td class="dt">INT</td><td><span class="pill orange" style="font-size:10px">FK → CLIENTE</span></td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="quiz-section">
+          <div class="quiz-title">⚡ Questão Rápida</div>
+          <div class="quiz-q" id="q-log1" data-answer="B">
+            <span class="q-num">QUESTÃO 03</span>
+            <div class="q-text">Em um relacionamento <strong>1:N entre DEPARTAMENTO e FUNCIONÁRIO</strong>, onde deve ficar a Chave Estrangeira (FK)?</div>
+            <div class="options">
+              <div class="option" onclick="answerQ('q-log1','A',this)"><span class="letter">A</span>Na tabela DEPARTAMENTO</div>
+              <div class="option" onclick="answerQ('q-log1','B',this)"><span class="letter">B</span>Na tabela FUNCIONÁRIO (lado N)</div>
+              <div class="option" onclick="answerQ('q-log1','C',this)"><span class="letter">C</span>Em uma nova tabela intermediária</div>
+              <div class="option" onclick="answerQ('q-log1','D',this)"><span class="letter">D</span>Não é necessário FK nesse caso</div>
+            </div>
+            <div class="q-feedback" id="q-log1-fb"></div>
+          </div>
+          <div class="quiz-q" id="q-log2" data-answer="C">
+            <span class="q-num">QUESTÃO 04</span>
+            <div class="q-text">Qual das opções é uma característica obrigatória de uma <strong>chave primária (PK)</strong>?</div>
+            <div class="options">
+              <div class="option" onclick="answerQ('q-log2','A',this)"><span class="letter">A</span>Pode ser nula em alguns registros</div>
+              <div class="option" onclick="answerQ('q-log2','B',this)"><span class="letter">B</span>Pode se repetir em diferentes linhas</div>
+              <div class="option" onclick="answerQ('q-log2','C',this)"><span class="letter">C</span>Deve ser única e não nula</div>
+              <div class="option" onclick="answerQ('q-log2','D',this)"><span class="letter">D</span>Deve sempre ser numérica</div>
+            </div>
+            <div class="q-feedback" id="q-log2-fb"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════ FÍSICO ══════════════ -->
+<section class="page" id="page-fisico">
+  <div class="hero">
+    <div class="hero-tag">03 · Modelo Físico</div>
+    <h2>Scripts SQL e <em>Documentação</em></h2>
+    <p>O modelo físico transforma o modelo lógico em comandos SQL executáveis, com tipos de dados específicos, constraints e consistência entre todos os artefatos.</p>
+  </div>
+  <div class="content-area">
+
+    <div class="topic-card open">
+      <div class="topic-header" onclick="toggleCard(this)">
+        <div class="topic-icon" style="background:rgba(255,106,61,0.1)">🏗️</div>
+        <div><div class="topic-title">DDL — CREATE TABLE</div><div class="topic-sub">Comandos de definição de estrutura</div></div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-body">
+        <div class="theory-block">
+          <h4>Tipos de Dados Comuns</h4>
+          <div class="cards-grid">
+            <div class="info-card"><div class="ic-title">Inteiros</div><div class="ic-body"><strong>INT</strong>, BIGINT, SMALLINT. Para IDs, quantidades, contadores.</div></div>
+            <div class="info-card"><div class="ic-title">Texto</div><div class="ic-body"><strong>VARCHAR(n)</strong> tamanho variável, <strong>CHAR(n)</strong> tamanho fixo, TEXT para textos longos.</div></div>
+            <div class="info-card"><div class="ic-title">Numérico</div><div class="ic-body"><strong>DECIMAL(p,s)</strong> ou NUMERIC para valores monetários. FLOAT para científicos.</div></div>
+            <div class="info-card"><div class="ic-title">Data/Hora</div><div class="ic-body"><strong>DATE</strong> (só data), <strong>TIME</strong>, <strong>DATETIME</strong> / <strong>TIMESTAMP</strong> (data + hora).</div></div>
+            <div class="info-card"><div class="ic-title">Booleano</div><div class="ic-body"><strong>BOOLEAN</strong> (TRUE/FALSE). Alguns SGBDs usam TINYINT(1).</div></div>
+          </div>
+        </div>
+        <div class="theory-block">
+          <h4>Script Completo — E-commerce</h4>
+          <div class="code-wrap">
+            <div class="code-header"><span class="code-label">SQL · DDL</span><button class="copy-btn" onclick="copyCode(this)">COPIAR</button></div>
+            <pre><span class="cm">-- ===== MODELO FÍSICO - E-COMMERCE =====</span>
+
+<span class="kw">CREATE TABLE</span> <span class="fn">categoria</span> (
+  id_categoria  <span class="tp">INT</span>           <span class="kw">NOT NULL AUTO_INCREMENT</span>,
+  nome          <span class="tp">VARCHAR</span>(80)   <span class="kw">NOT NULL</span>,
+  descricao     <span class="tp">TEXT</span>,
+  <span class="kw">CONSTRAINT</span> pk_categoria <span class="kw">PRIMARY KEY</span> (id_categoria)
+);
+
+<span class="kw">CREATE TABLE</span> <span class="fn">cliente</span> (
+  id_cliente    <span class="tp">INT</span>           <span class="kw">NOT NULL AUTO_INCREMENT</span>,
+  nome          <span class="tp">VARCHAR</span>(100)  <span class="kw">NOT NULL</span>,
+  email         <span class="tp">VARCHAR</span>(150)  <span class="kw">NOT NULL UNIQUE</span>,
+  cpf           <span class="tp">CHAR</span>(11)      <span class="kw">NOT NULL UNIQUE</span>,
+  data_cadastro <span class="tp">DATE</span>          <span class="kw">DEFAULT</span> <span class="fn">CURRENT_DATE</span>,
+  <span class="kw">CONSTRAINT</span> pk_cliente <span class="kw">PRIMARY KEY</span> (id_cliente)
+);
+
+<span class="kw">CREATE TABLE</span> <span class="fn">produto</span> (
+  id_produto    <span class="tp">INT</span>              <span class="kw">NOT NULL AUTO_INCREMENT</span>,
+  nome          <span class="tp">VARCHAR</span>(150)     <span class="kw">NOT NULL</span>,
+  preco         <span class="tp">DECIMAL</span>(10,2)    <span class="kw">NOT NULL</span>,
+  estoque       <span class="tp">INT</span>              <span class="kw">DEFAULT</span> 0,
+  id_categoria  <span class="tp">INT</span>              <span class="kw">NOT NULL</span>,
+  <span class="kw">CONSTRAINT</span> pk_produto    <span class="kw">PRIMARY KEY</span> (id_produto),
+  <span class="kw">CONSTRAINT</span> fk_prod_cat   <span class="kw">FOREIGN KEY</span> (id_categoria)
+                            <span class="kw">REFERENCES</span> <span class="fn">categoria</span>(id_categoria)
+);
+
+<span class="kw">CREATE TABLE</span> <span class="fn">pedido</span> (
+  id_pedido     <span class="tp">INT</span>           <span class="kw">NOT NULL AUTO_INCREMENT</span>,
+  data_pedido   <span class="tp">DATE</span>          <span class="kw">NOT NULL</span>,
+  status        <span class="tp">VARCHAR</span>(20)   <span class="kw">DEFAULT</span> <span class="str">'PENDENTE'</span>,
+  valor_total   <span class="tp">DECIMAL</span>(12,2),
+  id_cliente    <span class="tp">INT</span>           <span class="kw">NOT NULL</span>,
+  <span class="kw">CONSTRAINT</span> pk_pedido      <span class="kw">PRIMARY KEY</span> (id_pedido),
+  <span class="kw">CONSTRAINT</span> fk_ped_cli     <span class="kw">FOREIGN KEY</span> (id_cliente)
+                             <span class="kw">REFERENCES</span> <span class="fn">cliente</span>(id_cliente)
+);
+
+<span class="kw">CREATE TABLE</span> <span class="fn">item_pedido</span> (
+  id_pedido      <span class="tp">INT</span>            <span class="kw">NOT NULL</span>,
+  id_produto     <span class="tp">INT</span>            <span class="kw">NOT NULL</span>,
+  quantidade     <span class="tp">INT</span>            <span class="kw">NOT NULL</span>,
+  preco_unitario <span class="tp">DECIMAL</span>(10,2)  <span class="kw">NOT NULL</span>,
+  <span class="kw">CONSTRAINT</span> pk_item          <span class="kw">PRIMARY KEY</span> (id_pedido, id_produto),
+  <span class="kw">CONSTRAINT</span> fk_item_ped      <span class="kw">FOREIGN KEY</span> (id_pedido)
+                               <span class="kw">REFERENCES</span> <span class="fn">pedido</span>(id_pedido),
+  <span class="kw">CONSTRAINT</span> fk_item_prod     <span class="kw">FOREIGN KEY</span> (id_produto)
+                               <span class="kw">REFERENCES</span> <span class="fn">produto</span>(id_produto)
+);</pre>
+          </div>
+        </div>
+        <div class="theory-block">
+          <h4>Dicionário de Dados</h4>
+          <p>O dicionário de dados documenta cada coluna das tabelas. Deve ser consistente com o script SQL e o modelo lógico.</p>
+          <div class="db-table">
+            <div class="db-table-header">DICIONÁRIO — PRODUTO</div>
+            <table>
+              <tr><th>CAMPO</th><th>TIPO</th><th>NULL?</th><th>DESCRIÇÃO</th></tr>
+              <tr><td class="pk">id_produto</td><td class="dt">INT</td><td>NÃO</td><td>Identificador único do produto (PK)</td></tr>
+              <tr><td>nome</td><td class="dt">VARCHAR(150)</td><td>NÃO</td><td>Nome comercial do produto</td></tr>
+              <tr><td>preco</td><td class="dt">DECIMAL(10,2)</td><td>NÃO</td><td>Preço de venda em reais</td></tr>
+              <tr><td>estoque</td><td class="dt">INT</td><td>SIM</td><td>Quantidade em estoque (padrão 0)</td></tr>
+              <tr><td class="fk">id_categoria</td><td class="dt">INT</td><td>NÃO</td><td>FK para tabela CATEGORIA</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="quiz-section">
+          <div class="quiz-title">⚡ Questão Rápida</div>
+          <div class="quiz-q" id="q-fis1" data-answer="D">
+            <span class="q-num">QUESTÃO 05</span>
+            <div class="q-text">Qual tipo de dado é mais adequado para armazenar um <strong>valor monetário</strong> como R$1.250,99?</div>
+            <div class="options">
+              <div class="option" onclick="answerQ('q-fis1','A',this)"><span class="letter">A</span>INT</div>
+              <div class="option" onclick="answerQ('q-fis1','B',this)"><span class="letter">B</span>VARCHAR(20)</div>
+              <div class="option" onclick="answerQ('q-fis1','C',this)"><span class="letter">C</span>FLOAT</div>
+              <div class="option" onclick="answerQ('q-fis1','D',this)"><span class="letter">D</span>DECIMAL(10,2)</div>
+            </div>
+            <div class="q-feedback" id="q-fis1-fb"></div>
+          </div>
+          <div class="quiz-q" id="q-fis2" data-answer="A">
+            <span class="q-num">QUESTÃO 06</span>
+            <div class="q-text">A constraint <strong>FOREIGN KEY</strong> garante qual tipo de integridade?</div>
+            <div class="options">
+              <div class="option" onclick="answerQ('q-fis2','A',this)"><span class="letter">A</span>Integridade referencial — o valor deve existir na tabela referenciada</div>
+              <div class="option" onclick="answerQ('q-fis2','B',this)"><span class="letter">B</span>Integridade de domínio — limita o tipo de dado</div>
+              <div class="option" onclick="answerQ('q-fis2','C',this)"><span class="letter">C</span>Integridade de entidade — garante unicidade da linha</div>
+              <div class="option" onclick="answerQ('q-fis2','D',this)"><span class="letter">D</span>Integridade semântica — valida regras de negócio</div>
+            </div>
+            <div class="q-feedback" id="q-fis2-fb"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════ SQL ══════════════ -->
+<section class="page" id="page-sql">
+  <div class="hero">
+    <div class="hero-tag">04 · Consultas SQL</div>
+    <h2>SELECT, JOIN e <em>Condições</em></h2>
+    <p>As consultas DML são o coração do uso prático de bancos de dados. Domine SELECT, filtros, agrupamentos e JOINs.</p>
+  </div>
+  <div class="content-area">
+
+    <!-- SELECT Básico -->
+    <div class="topic-card open">
+      <div class="topic-header" onclick="toggleCard(this)">
+        <div class="topic-icon" style="background:rgba(255,217,61,0.1)">⚡</div>
+        <div><div class="topic-title">SELECT — Estrutura Completa</div><div class="topic-sub">Ordem de execução e cláusulas</div></div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-body">
+        <div class="theory-block">
+          <h4>Ordem de Escrita vs Ordem de Execução</h4>
+          <div class="cards-grid">
+            <div class="info-card"><div class="ic-title">1. FROM</div><div class="ic-body">Define a(s) tabela(s) de origem. Executado primeiro.</div></div>
+            <div class="info-card"><div class="ic-title">2. JOIN</div><div class="ic-body">Combina tabelas relacionadas.</div></div>
+            <div class="info-card"><div class="ic-title">3. WHERE</div><div class="ic-body">Filtra linhas <strong>antes</strong> do agrupamento.</div></div>
+            <div class="info-card"><div class="ic-title">4. GROUP BY</div><div class="ic-body">Agrupa linhas com valores iguais.</div></div>
+            <div class="info-card"><div class="ic-title">5. HAVING</div><div class="ic-body">Filtra grupos <strong>após</strong> o GROUP BY.</div></div>
+            <div class="info-card"><div class="ic-title">6. SELECT</div><div class="ic-body">Define quais colunas/expressões retornar.</div></div>
+            <div class="info-card"><div class="ic-title">7. ORDER BY</div><div class="ic-body">Ordena o resultado final. ASC ou DESC.</div></div>
+            <div class="info-card"><div class="ic-title">8. LIMIT</div><div class="ic-body">Limita a quantidade de linhas retornadas.</div></div>
+          </div>
+        </div>
+        <div class="theory-block">
+          <h4>Exemplos de Consultas</h4>
+          <div class="code-wrap">
+            <div class="code-header"><span class="code-label">SELECT BÁSICO</span><button class="copy-btn" onclick="copyCode(this)">COPIAR</button></div>
+            <pre><span class="cm">-- Todos os clientes cujo nome começa com 'A'</span>
+<span class="kw">SELECT</span> id_cliente, nome, email
+<span class="kw">FROM</span>   cliente
+<span class="kw">WHERE</span>  nome <span class="kw">LIKE</span> <span class="str">'A%'</span>
+<span class="kw">ORDER BY</span> nome <span class="kw">ASC</span>;
+
+<span class="cm">-- Produtos com preço entre 50 e 200 reais</span>
+<span class="kw">SELECT</span> nome, preco
+<span class="kw">FROM</span>   produto
+<span class="kw">WHERE</span>  preco <span class="kw">BETWEEN</span> 50 <span class="kw">AND</span> 200
+<span class="kw">ORDER BY</span> preco <span class="kw">DESC</span>;
+
+<span class="cm">-- Pedidos com status PENDENTE de um cliente específico</span>
+<span class="kw">SELECT</span> id_pedido, data_pedido, valor_total
+<span class="kw">FROM</span>   pedido
+<span class="kw">WHERE</span>  id_cliente = 5
+  <span class="kw">AND</span>  status = <span class="str">'PENDENTE'</span>;</pre>
+          </div>
+          <div class="code-wrap">
+            <div class="code-header"><span class="code-label">GROUP BY + HAVING + FUNÇÕES DE AGREGAÇÃO</span><button class="copy-btn" onclick="copyCode(this)">COPIAR</button></div>
+            <pre><span class="cm">-- Total gasto por cliente (apenas quem gastou mais de R$500)</span>
+<span class="kw">SELECT</span>
+  c.nome,
+  <span class="fn">COUNT</span>(p.id_pedido)        <span class="kw">AS</span> qtd_pedidos,
+  <span class="fn">SUM</span>(p.valor_total)        <span class="kw">AS</span> total_gasto,
+  <span class="fn">AVG</span>(p.valor_total)        <span class="kw">AS</span> ticket_medio
+<span class="kw">FROM</span>   cliente c
+<span class="kw">JOIN</span>   pedido  p <span class="kw">ON</span> p.id_cliente = c.id_cliente
+<span class="kw">GROUP BY</span> c.id_cliente, c.nome
+<span class="kw">HAVING</span> <span class="fn">SUM</span>(p.valor_total) > 500
+<span class="kw">ORDER BY</span> total_gasto <span class="kw">DESC</span>;</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JOINs -->
+    <div class="topic-card">
+      <div class="topic-header" onclick="toggleCard(this)">
+        <div class="topic-icon" style="background:rgba(124,106,255,0.1)">🔀</div>
+        <div><div class="topic-title">Tipos de JOIN</div><div class="topic-sub">INNER, LEFT, RIGHT, FULL</div></div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-body">
+        <div class="theory-block">
+          <h4>Comparativo de JOINs</h4>
+          <div class="cards-grid">
+            <div class="info-card"><div class="ic-title">INNER JOIN</div><div class="ic-body">Retorna só os registros que têm <strong>correspondência em ambas</strong> as tabelas. O mais comum.</div></div>
+            <div class="info-card"><div class="ic-title">LEFT JOIN</div><div class="ic-body">Retorna <strong>todos da tabela esquerda</strong> + os correspondentes da direita. Sem correspondência → NULL.</div></div>
+            <div class="info-card"><div class="ic-title">RIGHT JOIN</div><div class="ic-body">Retorna <strong>todos da tabela direita</strong> + os correspondentes da esquerda.</div></div>
+            <div class="info-card"><div class="ic-title">FULL JOIN</div><div class="ic-body">Retorna <strong>todos de ambas</strong> as tabelas, com NULL onde não há correspondência.</div></div>
+          </div>
+        </div>
+        <div class="theory-block">
+          <h4>Exemplos de JOIN</h4>
+          <div class="code-wrap">
+            <div class="code-header"><span class="code-label">JOINS NA PRÁTICA</span><button class="copy-btn" onclick="copyCode(this)">COPIAR</button></div>
+            <pre><span class="cm">-- INNER JOIN: pedidos com dados do cliente</span>
+<span class="kw">SELECT</span> p.id_pedido, c.nome, p.data_pedido, p.valor_total
+<span class="kw">FROM</span>   pedido  p
+<span class="kw">INNER JOIN</span> cliente c <span class="kw">ON</span> c.id_cliente = p.id_cliente;
+
+<span class="cm">-- LEFT JOIN: todos os clientes, mesmo sem pedido</span>
+<span class="kw">SELECT</span> c.nome, p.id_pedido, p.data_pedido
+<span class="kw">FROM</span>   cliente c
+<span class="kw">LEFT JOIN</span> pedido p <span class="kw">ON</span> p.id_cliente = c.id_cliente;
+
+<span class="cm">-- JOIN com 3 tabelas: itens com produto e pedido</span>
+<span class="kw">SELECT</span>
+  c.nome         <span class="kw">AS</span> cliente,
+  pr.nome        <span class="kw">AS</span> produto,
+  i.quantidade,
+  i.preco_unitario
+<span class="kw">FROM</span>   item_pedido i
+<span class="kw">JOIN</span>   pedido      p  <span class="kw">ON</span> p.id_pedido  = i.id_pedido
+<span class="kw">JOIN</span>   cliente     c  <span class="kw">ON</span> c.id_cliente = p.id_cliente
+<span class="kw">JOIN</span>   produto     pr <span class="kw">ON</span> pr.id_produto = i.id_produto
+<span class="kw">WHERE</span>  p.data_pedido >= <span class="str">'2024-01-01'</span>;</pre>
+          </div>
+        </div>
+        <div class="theory-block">
+          <h4>Subqueries</h4>
+          <div class="code-wrap">
+            <div class="code-header"><span class="code-label">SUBCONSULTAS</span><button class="copy-btn" onclick="copyCode(this)">COPIAR</button></div>
+            <pre><span class="cm">-- Produtos mais caros que a média geral</span>
+<span class="kw">SELECT</span> nome, preco
+<span class="kw">FROM</span>   produto
+<span class="kw">WHERE</span>  preco > (<span class="kw">SELECT</span> <span class="fn">AVG</span>(preco) <span class="kw">FROM</span> produto);
+
+<span class="cm">-- Clientes que NÃO fizeram pedido (NOT IN)</span>
+<span class="kw">SELECT</span> nome, email
+<span class="kw">FROM</span>   cliente
+<span class="kw">WHERE</span>  id_cliente <span class="kw">NOT IN</span> (
+  <span class="kw">SELECT DISTINCT</span> id_cliente <span class="kw">FROM</span> pedido
+);</pre>
+          </div>
+        </div>
+        <div class="quiz-section">
+          <div class="quiz-title">⚡ Questões SQL</div>
+          <div class="quiz-q" id="q-sql1" data-answer="C">
+            <span class="q-num">QUESTÃO 07</span>
+            <div class="q-text">Qual é a diferença entre <strong>WHERE</strong> e <strong>HAVING</strong>?</div>
+            <div class="options">
+              <div class="option" onclick="answerQ('q-sql1','A',this)"><span class="letter">A</span>WHERE filtra grupos; HAVING filtra linhas individuais</div>
+              <div class="option" onclick="answerQ('q-sql1','B',this)"><span class="letter">B</span>São sinônimos e podem ser usados de forma intercambiável</div>
+              <div class="option" onclick="answerQ('q-sql1','C',this)"><span class="letter">C</span>WHERE filtra linhas antes do agrupamento; HAVING filtra grupos depois do GROUP BY</div>
+              <div class="option" onclick="answerQ('q-sql1','D',this)"><span class="letter">D</span>HAVING substitui o WHERE em todos os casos</div>
+            </div>
+            <div class="q-feedback" id="q-sql1-fb"></div>
+          </div>
+          <div class="quiz-q" id="q-sql2" data-answer="B">
+            <span class="q-num">QUESTÃO 08</span>
+            <div class="q-text">Um <strong>LEFT JOIN</strong> entre CLIENTE e PEDIDO retorna:</div>
+            <div class="options">
+              <div class="option" onclick="answerQ('q-sql2','A',this)"><span class="letter">A</span>Apenas clientes que têm pedidos registrados</div>
+              <div class="option" onclick="answerQ('q-sql2','B',this)"><span class="letter">B</span>Todos os clientes, inclusive os sem pedidos (com NULL nas colunas de pedido)</div>
+              <div class="option" onclick="answerQ('q-sql2','C',this)"><span class="letter">C</span>Todos os pedidos, inclusive os sem cliente associado</div>
+              <div class="option" onclick="answerQ('q-sql2','D',this)"><span class="letter">D</span>Apenas as linhas em que há correspondência em ambas as tabelas</div>
+            </div>
+            <div class="q-feedback" id="q-sql2-fb"></div>
+          </div>
+          <div class="quiz-q" id="q-sql3" data-answer="A">
+            <span class="q-num">QUESTÃO 09</span>
+            <div class="q-text">Qual query retorna os <strong>produtos mais caros que a média</strong> de preço?</div>
+            <div class="options">
+              <div class="option" onclick="answerQ('q-sql3','A',this)"><span class="letter">A</span><code style="font-family:monospace;font-size:11px">SELECT nome FROM produto WHERE preco > (SELECT AVG(preco) FROM produto)</code></div>
+              <div class="option" onclick="answerQ('q-sql3','B',this)"><span class="letter">B</span><code style="font-family:monospace;font-size:11px">SELECT nome FROM produto HAVING preco > AVG(preco)</code></div>
+              <div class="option" onclick="answerQ('q-sql3','C',this)"><span class="letter">C</span><code style="font-family:monospace;font-size:11px">SELECT nome FROM produto WHERE preco > MAX(preco)</code></div>
+              <div class="option" onclick="answerQ('q-sql3','D',this)"><span class="letter">D</span><code style="font-family:monospace;font-size:11px">SELECT AVG(nome) FROM produto WHERE preco > media</code></div>
+            </div>
+            <div class="q-feedback" id="q-sql3-fb"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════ CHEAT SHEET ══════════════ -->
+<section class="page" id="page-cheat">
+  <div class="hero">
+    <div class="hero-tag">Revisão Rápida</div>
+    <h2>Cheat <em>Sheet</em> Completa</h2>
+    <p>Referência visual de tudo que você precisa para a AF. Use para revisão rápida antes da prova.</p>
+  </div>
+  <div class="content-area">
+    <div class="cheat-grid">
+      <div class="cheat-card">
+        <div class="cheat-card-header" style="color:var(--accent2)">🗂️ DER — Notações</div>
+        <pre><span class="cm">Entidade       → Retângulo
+Atributo       → Elipse
+Atributo PK    → Elipse sublinhada
+Relacionamento → Losango
+Cardinalidade  → (min, max) nas extremidades
+1:1   → Um para Um
+1:N   → Um para Muitos
+N:N   → Muitos p/ Muitos → tabela nova</span></pre>
+      </div>
+      <div class="cheat-card">
+        <div class="cheat-card-header" style="color:var(--accent)">📐 Modelo Lógico</div>
+        <pre><span class="cm">Entidade → Tabela
+Atributo → Coluna
+PK  → PRIMARY KEY (único, não nulo)
+FK  → FOREIGN KEY (ref. outra tabela)
+1:N → FK no lado N
+N:N → Nova tabela + 2 FKs (PK composta)
+1:1 → FK em qualquer lado (UNIQUE)</span></pre>
+      </div>
+      <div class="cheat-card">
+        <div class="cheat-card-header" style="color:var(--accent3)">🏗️ Tipos de Dados</div>
+        <pre><span class="tp">INT</span>           → inteiros
+<span class="tp">DECIMAL</span>(p,s)  → valores monetários
+<span class="tp">VARCHAR</span>(n)    → texto variável
+<span class="tp">CHAR</span>(n)       → texto fixo (CPF, CEP)
+<span class="tp">TEXT</span>          → textos longos
+<span class="tp">DATE</span>          → só data
+<span class="tp">DATETIME</span>      → data + hora
+<span class="tp">BOOLEAN</span>       → verdadeiro/falso</pre>
+      </div>
+      <div class="cheat-card">
+        <div class="cheat-card-header" style="color:var(--accent4)">⚡ Constraints</div>
+        <pre><span class="kw">PRIMARY KEY</span>   → único + não nulo
+<span class="kw">FOREIGN KEY</span>   → integridade referencial
+<span class="kw">UNIQUE</span>        → sem repetição
+<span class="kw">NOT NULL</span>      → obrigatório
+<span class="kw">DEFAULT</span> val   → valor padrão
+<span class="kw">CHECK</span>(cond)   → valida condição</pre>
+      </div>
+      <div class="cheat-card">
+        <div class="cheat-card-header" style="color:var(--accent)">⚡ SELECT Completo</div>
+        <pre><span class="kw">SELECT</span>   colunas / expressões
+<span class="kw">FROM</span>     tabela
+<span class="kw">JOIN</span>     outra <span class="kw">ON</span> cond
+<span class="kw">WHERE</span>    filtro de linhas
+<span class="kw">GROUP BY</span> coluna
+<span class="kw">HAVING</span>   filtro de grupos
+<span class="kw">ORDER BY</span> coluna <span class="kw">ASC</span>|<span class="kw">DESC</span>
+<span class="kw">LIMIT</span>    n</pre>
+      </div>
+      <div class="cheat-card">
+        <div class="cheat-card-header" style="color:var(--accent2)">🔀 JOINs</div>
+        <pre><span class="kw">INNER JOIN</span>  → interseção (A ∩ B)
+<span class="kw">LEFT  JOIN</span>  → tudo de A + B quando tem
+<span class="kw">RIGHT JOIN</span>  → tudo de B + A quando tem
+<span class="kw">FULL  JOIN</span>  → tudo de A + tudo de B
+
+<span class="cm">ON tabA.fk = tabB.pk</span></pre>
+      </div>
+      <div class="cheat-card">
+        <div class="cheat-card-header" style="color:var(--accent3)">📊 Funções de Agregação</div>
+        <pre><span class="fn">COUNT</span>(*)       → conta linhas
+<span class="fn">SUM</span>(col)       → soma valores
+<span class="fn">AVG</span>(col)       → média
+<span class="fn">MAX</span>(col)       → maior valor
+<span class="fn">MIN</span>(col)       → menor valor
+
+<span class="cm">Usadas com GROUP BY</span></pre>
+      </div>
+      <div class="cheat-card">
+        <div class="cheat-card-header" style="color:var(--accent4)">🔍 Filtros Úteis</div>
+        <pre><span class="kw">LIKE</span> <span class="str">'A%'</span>      → começa com A
+<span class="kw">LIKE</span> <span class="str">'%ao'</span>     → termina com ao
+<span class="kw">BETWEEN</span> a <span class="kw">AND</span> b → intervalo
+<span class="kw">IN</span> (1,2,3)    → em lista
+<span class="kw">NOT IN</span> (...)  → fora da lista
+<span class="kw">IS NULL</span>       → valor nulo
+<span class="kw">IS NOT NULL</span>   → não nulo</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ QUIZ GERAL ══════════════ -->
+<section class="page" id="page-quiz">
+  <div class="hero">
+    <div class="hero-tag">Simulado Geral</div>
+    <h2>Teste seus <em>Conhecimentos</em></h2>
+    <p>16 questões cobrindo todos os critérios da AF. Responda com atenção e veja o feedback imediato.</p>
+  </div>
+  <div class="content-area">
+    <div id="quiz-score-top" class="score-badge" style="display:none">
+      <div>📊 PONTUAÇÃO:</div>
+      <div class="score-num" id="score-num">0</div>
+      <div>/ <span id="score-total">16</span> questões</div>
+    </div>
+
+    <!-- Q1 -->
+    <div class="quiz-q" id="gq1" data-answer="B">
+      <span class="q-num">01 · DER</span>
+      <div class="q-text">No Diagrama Entidade-Relacionamento, qual símbolo representa um <strong>relacionamento</strong>?</div>
+      <div class="options">
+        <div class="option" onclick="answerQ('gq1','A',this)"><span class="letter">A</span>Retângulo</div>
+        <div class="option" onclick="answerQ('gq1','B',this)"><span class="letter">B</span>Losango</div>
+        <div class="option" onclick="answerQ('gq1','C',this)"><span class="letter">C</span>Elipse</div>
+        <div class="option" onclick="answerQ('gq1','D',this)"><span class="letter">D</span>Círculo</div>
+      </div>
+      <div class="q-feedback" id="gq1-fb"></div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="quiz-q" id="gq2" data-answer="C">
+      <span class="q-num">02 · DER</span>
+      <div class="q-text">Uma <strong>entidade fraca</strong> no DER é aquela que:</div>
+      <div class="options">
+        <div class="option" onclick="answerQ('gq2','A',this)"><span class="letter">A</span>Possui poucos atributos</div>
+        <div class="option" onclick="answerQ('gq2','B',this)"><span class="letter">B</span>Não tem relacionamentos</div>
+        <div class="option" onclick="answerQ('gq2','C',this)"><span class="letter">C</span>Não possui chave própria e depende de outra entidade para se identificar</div>
+        <div class="option" onclick="answerQ('gq2','D',this)"><span class="letter">D</span>Tem cardinalidade 1:1</div>
+      </div>
+      <div class="q-feedback" id="gq2-fb"></div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="quiz-q" id="gq3" data-answer="D">
+      <span class="q-num">03 · LÓGICO</span>
+      <div class="q-text">Um relacionamento <strong>N:N entre ALUNO e DISCIPLINA</strong> gera, no modelo lógico:</div>
+      <div class="options">
+        <div class="option" onclick="answerQ('gq3','A',this)"><span class="letter">A</span>FK na tabela ALUNO</div>
+        <div class="option" onclick="answerQ('gq3','B',this)"><span class="letter">B</span>FK na tabela DISCIPLINA</div>
+        <div class="option" onclick="answerQ('gq3','C',this)"><span class="letter">C</span>Nenhuma alteração nas tabelas</div>
+        <div class="option" onclick="answerQ('gq3','D',this)"><span class="letter">D</span>Uma nova tabela intermediária (ex: MATRICULA) com FKs de ambas</div>
+      </div>
+      <div class="q-feedback" id="gq3-fb"></div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="quiz-q" id="gq4" data-answer="A">
+      <span class="q-num">04 · LÓGICO</span>
+      <div class="q-text">No modelo lógico, a <strong>notação textual</strong> para indicar uma chave primária é:</div>
+      <div class="options">
+        <div class="option" onclick="answerQ('gq4','A',this)"><span class="letter">A</span>Campo sublinhado: <u>id_cliente</u></div>
+        <div class="option" onclick="answerQ('gq4','B',this)"><span class="letter">B</span>Campo em maiúsculas: ID_CLIENTE</div>
+        <div class="option" onclick="answerQ('gq4','C',this)"><span class="letter">C</span>Asterisco: *id_cliente</div>
+        <div class="option" onclick="answerQ('gq4','D',this)"><span class="letter">D</span>Campo entre colchetes: [id_cliente]</div>
+      </div>
+      <div class="q-feedback" id="gq4-fb"></div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="quiz-q" id="gq5" data-answer="B">
+      <span class="q-num">05 · FÍSICO</span>
+      <div class="q-text">Qual comando SQL é usado para <strong>criar uma tabela</strong>?</div>
+      <div class="options">
+        <div class="option" onclick="answerQ('gq5','A',this)"><span class="letter">A</span>INSERT TABLE</div>
+        <div class="option" onclick="answerQ('gq5','B',this)"><span class="letter">B</span>CREATE TABLE</div>
+        <div class="option" onclick="answerQ('gq5','C',this)"><span class="letter">C</span>MAKE TABLE</div>
+        <div class="option" onclick="answerQ('gq5','D',this)"><span class="letter">D</span>BUILD TABLE</div>
+      </div>
+      <div class="q-feedback" id="gq5-fb"></div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="quiz-q" id="gq6" data-answer="C">
+      <span class="q-num">06 · FÍSICO</span>
+      <div class="q-text">O tipo <strong>CHAR(11)</strong> é mais adequado do que VARCHAR(11) para armazenar CPF porque:</div>
+      <div class="options">
+        <div class="option" onclick="answerQ('gq6','A',this)"><span class="letter">A</span>É mais rápido para cálculos matemáticos</div>
+        <div class="option" onclick="answerQ('gq6','B',this)"><span class="letter">B</span>Aceita letras e números ao mesmo tempo</div>
+        <div class="option" onclick="answerQ('gq6','C',this)"><span class="letter">C</span>CPF sempre tem exatamente 11 dígitos (tamanho fixo)</div>
+        <div class="option" onclick="answerQ('gq6','D',this)"><span class="letter">D</span>CHAR ocupa menos espaço em disco</div>
+      </div>
+      <div class="q-feedback" id="gq6-fb"></div>
+    </div>
+
+    <!-- Q7 -->
+    <div class="quiz-q" id="gq7" data-answer="D">
+      <span class="q-num">07 · FÍSICO</span>
+      <div class="q-text">A constraint <strong>UNIQUE</strong> garante que:</div>
+      <div class="options">
+        <div class="option" onclick="answerQ('gq7','A',this)"><span class="letter">A</span>O campo nunca pode ser nulo</div>
+        <div class="option" onclick="answerQ('gq7','B',this)"><span class="letter">B</span>O campo é a chave primária da tabela</div>
+        <div class="option" onclick="answerQ('gq7','C',this)"><span class="letter">C</span>O campo referencia outra tabela</div>
+        <div class="option" onclick="answerQ('gq7','D',this)"><span class="letter">D</span>Não existam dois registros com o mesmo valor nessa coluna</div>
+      </div>
+      <div class="q-feedback" id="gq7-fb"></div>
+    </div>
+
+    <!-- Q8 -->
+    <div class="quiz-q" id="gq8" data-answer="A">
+      <span class="q-num">08 · SQL</span>
+      <div class="q-text">Qual query lista os <strong>nomes de todos os produtos</strong> em ordem alfabética?</div>
+      <div class="options">
+        <div class="option" onclick="answerQ('gq8','A',this)"><span class="letter">A</span><code style="font-size:11px;font-family:monospace">SELECT nome FROM produto ORDER BY nome ASC</code></div>
+        <div class="option" onclick="answerQ('gq8','B',this)"><span class="letter">B</span><code style="font-size:11px;font-family:monospace">GET nome FROM produto SORT BY nome</code></div>
+        <div class="option" onclick="answerQ('gq8','C',this)"><span class="letter">C</span><code style="font-size:11px;font-family:monospace">SELECT * FROM produto GROUP BY nome</code></div>
+        <div class="option" onclick="answerQ('gq8','D',this)"><span class="letter">D</span><code style="font-size:11px;font-family:monospace">SHOW nome FROM produto ORDER nome</code></div>
+      </div>
+      <div class="q-feedback" id="gq8-fb"></div>
+    </div>
+
+    <!-- Q9 -->
+    <div class="quiz-q" id="gq9" data-answer="B">
+      <span class="q-num">09 · SQL</span>
+      <div class="q-text">Para contar <strong>quantos pedidos cada cliente fez</strong>, qual consulta está correta?</div>
+      <div class="options">
+        <div class="option" onclick="answerQ('gq9','A',this)"><span class="letter">A</span><code style="font-size:11px;font-family:monospace">SELECT id_cliente, SUM(*) FROM pedido</code></div>
+        <div class="option" onclick="answerQ('gq9','B',this)"><span class="letter">B</span><code style="font-size:11px;font-family:monospace">SELECT id_cliente, COUNT(*) FROM pedido GROUP BY id_cliente</code></div>
+        <div class="option" onclick="answerQ('gq9','C',this)"><span class="letter">C</span><code style="font-size:11px;font-family:monospace">SELECT COUNT(*) FROM pedido WHERE id_cliente</code></div>
+        <div class="option" onclick="answerQ('gq9','D',this)"><span class="letter">D</span><code style="font-size:11px;font-family:monospace">SELECT id_cliente FROM pedido HAVING COUNT(*)</code></div>
+      </div>
+      <div class="q-feedback" id="gq9-fb"></div>
+    </div>
+
+    <!-- Q10 -->
+    <div class="quiz-q" id="gq10" data-answer="C">
+      <span class="q-num">10 · SQL</span>
+      <div class="q-text">O operador <strong>LIKE '%silva%'</strong> retorna registros onde o campo:</div>
+      <div class="options">
+        <div class="option" onclick="answerQ('gq10','A',this)"><span class="letter">A</span>É exatamente 'silva'</div>
+        <div class="option" onclick="answerQ('gq10','B',this)"><span class="letter">B</span>Começa com 'silva'</div>
+        <div class="option" onclick="answerQ('gq10','C',this)"><span class="letter">C</span>Contém 'silva' em qualquer posição</div>
+        <div class="option" onclick="answerQ('gq10','D',this)"><span class="letter">D</span>Termina com 'silva'</div>
+      </div>
+      <div class="q-feedback" id="gq10-fb"></div>
+    </div>
+
+    <!-- Q11 -->
+    <div class="quiz-q" id="gq11" data-answer="A">
+      <span class="q-num">11 · SQL</span>
+      <div class="q-text">Qual função retorna o <strong>maior valor</strong> de uma coluna?</div>
+      <div class="options">
+        <div class="option" onclick="answerQ('gq11','A',this)"><span class="letter">A</span>MAX()</div>
+        <div class="option" onclick="answerQ('gq11','B',this)"><span class="letter">B</span>TOP()</div>
+        <div class="option" onclick="answerQ('gq11','C',this)"><span class="letter">C</span>HIGHEST()</div>
+        <div class="option" onclick="answerQ('gq11','D',this)"><span class="letter">D</span>UPPER()</div>
+      </div>
+      <div class="q-feedback" id="gq11-fb"></div>
+    </div>
+
+    <!-- Q12 -->
+    <div class="quiz-q" id="gq12" data-answer="D">
+      <span class="q-num">12 · DER + LÓGICO</span>
+      <div class="q-text">Em um sistema de academia, um ALUNO pode ter vários PLANOS ao longo do tempo, e cada PLANO pode ter vários ALUNOS. Qual é o relacionamento e o impacto no modelo lógico?</div>
+      <div class="options">
+        <div class="option" onclick="answerQ('gq12','A',this)"><span class="letter">A</span>1:N — FK em ALUNO</div>
+        <div class="option" onclick="answerQ('gq12','B',this)"><span class="letter">B</span>1:1 — FK em PLANO</div>
+        <div class="option" onclick="answerQ('gq12','C',this)"><span class="letter">C</span>N:N — FK em ALUNO e em PLANO</div>
+        <div class="option" onclick="answerQ('gq12','D',this)"><span class="letter">D</span>N:N — nova tabela ASSINATURA com FKs de ALUNO e PLANO</div>
+      </div>
+      <div class="q-feedback" id="gq12-fb"></div>
+    </div>
+
+    <!-- Q13 -->
+    <div class="quiz-q" id="gq13" data-answer="B">
+      <span class="q-num">13 · FÍSICO</span>
+      <div class="q-text">A instrução <code style="font-family:monospace;font-size:12px">FOREIGN KEY (id_categoria) REFERENCES categoria(id_categoria)</code> impede que:</div>
+      <div class="options">
+        <div class="option" onclick="answerQ('gq13','A',this)"><span class="letter">A</span>Produtos sejam criados sem nome</div>
+        <div class="option" onclick="answerQ('gq13','B',this)"><span class="letter">B</span>Um produto seja criado com uma id_categoria que não existe na tabela categoria</div>
+        <div class="option" onclick="answerQ('gq13','C',this)"><span class="letter">C</span>Categorias tenham nomes duplicados</div>
+        <div class="option" onclick="answerQ('gq13','D',this)"><span class="letter">D</span>O campo id_categoria aceite valores nulos</div>
+      </div>
+      <div class="q-feedback" id="gq13-fb"></div>
+    </div>
+
+    <!-- Q14 -->
+    <div class="quiz-q" id="gq14" data-answer="C">
+      <span class="q-num">14 · SQL</span>
+      <div class="q-text">Para buscar pedidos com <strong>valor_total entre R$100 e R$500</strong>, qual filtro está correto?</div>
+      <div class="options">
+        <div class="option" onclick="answerQ('gq14','A',this)"><span class="letter">A</span><code style="font-size:11px;font-family:monospace">WHERE valor_total > 100 OR valor_total < 500</code></div>
+        <div class="option" onclick="answerQ('gq14','B',this)"><span class="letter">B</span><code style="font-size:11px;font-family:monospace">WHERE valor_total IN (100, 500)</code></div>
+        <div class="option" onclick="answerQ('gq14','C',this)"><span class="letter">C</span><code style="font-size:11px;font-family:monospace">WHERE valor_total BETWEEN 100 AND 500</code></div>
+        <div class="option" onclick="answerQ('gq14','D',this)"><span class="letter">D</span><code style="font-size:11px;font-family:monospace">WHERE valor_total RANGE 100 TO 500</code></div>
+      </div>
+      <div class="q-feedback" id="gq14-fb"></div>
+    </div>
+
+    <!-- Q15 -->
+    <div class="quiz-q" id="gq15" data-answer="A">
+      <span class="q-num">15 · SQL</span>
+      <div class="q-text">Para listar clientes com <strong>mais de 3 pedidos</strong>, qual consulta é correta?</div>
+      <div class="options">
+        <div class="option" onclick="answerQ('gq15','A',this)"><span class="letter">A</span><code style="font-size:11px;font-family:monospace">SELECT id_cliente, COUNT(*) FROM pedido GROUP BY id_cliente HAVING COUNT(*) > 3</code></div>
+        <div class="option" onclick="answerQ('gq15','B',this)"><span class="letter">B</span><code style="font-size:11px;font-family:monospace">SELECT id_cliente FROM pedido WHERE COUNT(*) > 3</code></div>
+        <div class="option" onclick="answerQ('gq15','C',this)"><span class="letter">C</span><code style="font-size:11px;font-family:monospace">SELECT id_cliente FROM pedido GROUP BY id_cliente WHERE COUNT > 3</code></div>
+        <div class="option" onclick="answerQ('gq15','D',this)"><span class="letter">D</span><code style="font-size:11px;font-family:monospace">SELECT * FROM pedido HAVING pedidos > 3</code></div>
+      </div>
+      <div class="q-feedback" id="gq15-fb"></div>
+    </div>
+
+    <!-- Q16 -->
+    <div class="quiz-q" id="gq16" data-answer="B">
+      <span class="q-num">16 · SQL + JOINS</span>
+      <div class="q-text">Qual JOIN deve ser usado para retornar <strong>todos os clientes</strong>, incluindo aqueles que <strong>nunca fizeram um pedido</strong>?</div>
+      <div class="options">
+        <div class="option" onclick="answerQ('gq16','A',this)"><span class="letter">A</span>INNER JOIN de CLIENTE com PEDIDO</div>
+        <div class="option" onclick="answerQ('gq16','B',this)"><span class="letter">B</span>LEFT JOIN de CLIENTE com PEDIDO</div>
+        <div class="option" onclick="answerQ('gq16','C',this)"><span class="letter">C</span>RIGHT JOIN de PEDIDO com CLIENTE</div>
+        <div class="option" onclick="answerQ('gq16','D',this)"><span class="letter">D</span>CROSS JOIN de CLIENTE com PEDIDO</div>
+      </div>
+      <div class="q-feedback" id="gq16-fb"></div>
+    </div>
+
+    <div id="quiz-score-bottom" class="score-badge" style="margin-top:24px">
+      <div>📊 PONTUAÇÃO ATUAL:</div>
+      <div class="score-num" id="score-num2">0</div>
+      <div>/ 16 respondidas: <span id="score-answered">0</span></div>
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+// ─── STATE ───
+const visited = new Set();
+const quizAnswers = {};
+let totalCorrect = 0;
+let totalAnswered = 0;
+
+// ─── NAVIGATION ───
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById('nav-' + id).classList.add('active');
+  visited.add(id);
+  updateProgress();
+  window.scrollTo(0,0);
+}
+
+function updateProgress() {
+  const pages = ['home','der','logico','fisico','sql','cheat','quiz'];
+  const pct = Math.round((visited.size / pages.length) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+}
+
+// ─── TOPIC CARDS ───
+function toggleCard(header) {
+  const card = header.closest('.topic-card');
+  card.classList.toggle('open');
+}
+
+// ─── QUIZ ───
+const feedbacks = {
+  'q-der1': { ok: '✅ Correto! Atributo multivalorado = pode ter múltiplos valores para a mesma entidade. Ex: vários telefones de um cliente.', err: '❌ Errado. Atributo MULTIVALORADO é o que pode ter mais de um valor. Ex: telefones (pode ter mais de um).' },
+  'q-der2': { ok: '✅ Correto! N:N — aluno matricula em várias disciplinas e disciplina tem vários alunos.', err: '❌ Errado. Como ambos os lados têm "vários", é N:N. Isso gera uma tabela intermediária (ex: MATRICULA).' },
+  'q-log1': { ok: '✅ Correto! Em 1:N, a FK fica no lado N. FUNCIONÁRIO referencia DEPARTAMENTO.', err: '❌ Errado. Em 1:N a FK fica no lado N. Ou seja, na tabela FUNCIONÁRIO (lado N).' },
+  'q-log2': { ok: '✅ Correto! PK deve ser ÚNICA e NOT NULL — nunca pode se repetir nem ser nula.', err: '❌ Errado. PK deve ser única E não nula. Não pode ter dois registros com o mesmo PK.' },
+  'q-fis1': { ok: '✅ Correto! DECIMAL(10,2) é o ideal para dinheiro — evita erros de arredondamento do FLOAT.', err: '❌ Errado. Para valores monetários use DECIMAL(p,s). FLOAT pode ter erros de precisão.' },
+  'q-fis2': { ok: '✅ Correto! FOREIGN KEY garante integridade referencial — não deixa inserir um valor que não existe na tabela referenciada.', err: '❌ Errado. FOREIGN KEY garante integridade REFERENCIAL — o valor referenciado deve existir.' },
+  'q-sql1': { ok: '✅ Correto! WHERE filtra LINHAS (antes do GROUP BY). HAVING filtra GRUPOS (depois do GROUP BY).', err: '❌ Errado. WHERE filtra linhas individualmente antes do agrupamento. HAVING filtra grupos depois do GROUP BY.' },
+  'q-sql2': { ok: '✅ Correto! LEFT JOIN retorna todos da tabela esquerda (CLIENTE), com NULL nas colunas de PEDIDO quando não há correspondência.', err: '❌ Errado. LEFT JOIN retorna TODOS os registros da tabela da esquerda, mesmo sem correspondência.' },
+  'q-sql3': { ok: '✅ Correto! Subquery: o WHERE usa o resultado do SELECT interno (AVG) para filtrar.', err: '❌ Errado. A subquery correta é WHERE preco > (SELECT AVG(preco) FROM produto). Funções de agregação não podem ir direto no WHERE.' },
+  'gq1': { ok: '✅ Correto! No DER: retângulo = entidade, losango = relacionamento, elipse = atributo.', err: '❌ Errado. O losango representa o relacionamento no DER.' },
+  'gq2': { ok: '✅ Correto! Entidade fraca depende de outra entidade para ter identidade. Ex: DEPENDENTE depende de FUNCIONÁRIO.', err: '❌ Errado. Entidade fraca é a que não tem chave própria e depende de outra entidade para existir.' },
+  'gq3': { ok: '✅ Correto! N:N sempre gera tabela intermediária com as duas FKs (e possíveis atributos do relacionamento).', err: '❌ Errado. Relacionamento N:N exige tabela intermediária com as FKs das duas entidades.' },
+  'gq4': { ok: '✅ Correto! Convenção: PK é indicada com sublinhado na notação textual do modelo lógico.', err: '❌ Errado. A notação padrão é sublinhar o campo que é PK.' },
+  'gq5': { ok: '✅ Correto! CREATE TABLE é o comando DDL para criar tabelas.', err: '❌ Errado. O comando correto é CREATE TABLE.' },
+  'gq6': { ok: '✅ Correto! CPF sempre tem 11 dígitos → tamanho fixo → CHAR(11) é mais eficiente que VARCHAR(11).', err: '❌ Errado. CHAR é para tamanho fixo. CPF sempre tem 11 dígitos, então CHAR(11) é ideal.' },
+  'gq7': { ok: '✅ Correto! UNIQUE impede valores duplicados na coluna (diferente de PK: UNIQUE aceita NULL).', err: '❌ Errado. UNIQUE garante que não haverá dois registros com o mesmo valor nessa coluna.' },
+  'gq8': { ok: '✅ Correto! SELECT nome FROM produto ORDER BY nome ASC.', err: '❌ Errado. A sintaxe correta é SELECT coluna FROM tabela ORDER BY coluna ASC.' },
+  'gq9': { ok: '✅ Correto! COUNT(*) com GROUP BY id_cliente conta pedidos por cliente.', err: '❌ Errado. Para contar por grupo use COUNT(*) + GROUP BY.' },
+  'gq10': { ok: '✅ Correto! % em qualquer posição = contém. %silva% = tem "silva" em qualquer lugar do texto.', err: '❌ Errado. %texto% = contém "texto" em qualquer posição.' },
+  'gq11': { ok: '✅ Correto! MAX() retorna o maior valor da coluna.', err: '❌ Errado. A função correta é MAX().' },
+  'gq12': { ok: '✅ Correto! N:N → tabela intermediária ASSINATURA (ou ALUNO_PLANO) com as FKs das duas entidades.', err: '❌ Errado. N:N exige tabela intermediária com FKs de ambas as entidades.' },
+  'gq13': { ok: '✅ Correto! FK impede inserir um valor que não existe na tabela referenciada (integridade referencial).', err: '❌ Errado. FOREIGN KEY impede que um produto tenha uma categoria que não existe.' },
+  'gq14': { ok: '✅ Correto! BETWEEN 100 AND 500 é o filtro mais limpo para intervalo (inclusivo nos dois extremos).', err: '❌ Errado. BETWEEN a AND b é o filtro para intervalo inclusivo.' },
+  'gq15': { ok: '✅ Correto! GROUP BY + HAVING COUNT(*) > 3 filtra grupos com mais de 3 pedidos.', err: '❌ Errado. Funções de agregação só podem ser filtradas com HAVING, nunca com WHERE.' },
+  'gq16': { ok: '✅ Correto! LEFT JOIN em CLIENTE garante que todos os clientes apareçam, mesmo sem pedidos (NULL nas colunas de pedido).', err: '❌ Errado. Para incluir todos os clientes mesmo sem pedidos: LEFT JOIN de CLIENTE (esquerda) com PEDIDO (direita).' },
+};
+
+function answerQ(qId, chosen, optEl) {
+  if (quizAnswers[qId]) return; // already answered
+  const card = document.getElementById(qId);
+  const correct = card.dataset.answer;
+  const fb = document.getElementById(qId + '-fb');
+  const opts = card.querySelectorAll('.option');
+  opts.forEach(o => o.classList.add('locked'));
+
+  const isCorrect = chosen === correct;
+  quizAnswers[qId] = { chosen, correct, isCorrect };
+
+  optEl.classList.add(isCorrect ? 'correct' : 'incorrect');
+  if (!isCorrect) {
+    opts.forEach(o => {
+      if (o.querySelector('.letter').textContent === correct) {
+        o.classList.add('reveal-correct');
+      }
+    });
+  }
+
+  fb.textContent = feedbacks[qId]?.[isCorrect ? 'ok' : 'err'] || '';
+  fb.className = 'q-feedback show ' + (isCorrect ? 'ok' : 'err');
+  if (isCorrect) card.classList.add('answered-correct');
+  else card.classList.add('answered-wrong');
+
+  updateScore();
+}
+
+function updateScore() {
+  totalCorrect = Object.values(quizAnswers).filter(a => a.isCorrect).length;
+  totalAnswered = Object.keys(quizAnswers).length;
+  const els1 = document.getElementById('score-num');
+  const els2 = document.getElementById('score-num2');
+  const elsa = document.getElementById('score-answered');
+  if (els1) els1.textContent = totalCorrect;
+  if (els2) els2.textContent = totalCorrect;
+  if (elsa) elsa.textContent = totalAnswered;
+  const top = document.getElementById('quiz-score-top');
+  if (top) top.style.display = 'flex';
+}
+
+// ─── COPY ───
+function copyCode(btn) {
+  const pre = btn.closest('.code-wrap').querySelector('pre');
+  const text = pre.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'COPIADO!';
+    setTimeout(() => btn.textContent = 'COPIAR', 2000);
+  });
+}
+
+// ─── INIT ───
+visited.add('home');
+updateProgress();
+</script>
+</body>
+</html>
